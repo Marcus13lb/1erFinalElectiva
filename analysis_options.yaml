@@ -1,10 +1,16 @@
-﻿include: package:flutter_lints/flutter.yaml
+include: package:flutter_lints/flutter.yaml
 
 analyzer:
   language:
     strict-inference: false
   exclude:
     - lib/*.g.dart
+    - build/**
+    - android/**
+    - ios/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:
