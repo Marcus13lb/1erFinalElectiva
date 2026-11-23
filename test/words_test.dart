@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:built_collection/built_collection.dart';
@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:generate_crossword/providers.dart';
 import 'package:generate_crossword/widgets/crossword_generator_app.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -63,7 +64,7 @@ void main() {
     },
   );
 
-  testWidgets('muestra carga y luego una lista desplazable de palabras', (
+  testWidgets('muestra carga y luego la cuadrícula de palabras', (
     tester,
   ) async {
     final pendingWords = Completer<BuiltSet<String>>();
@@ -78,17 +79,14 @@ void main() {
     );
     expect(find.text('Crossword Generator'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    pendingWords.complete(
-      BuiltSet<String>(List.generate(200, (index) => 'word$index')),
-    );
-    await tester.pumpAndSettle();
+    pendingWords.complete(BuiltSet<String>(['cat', 'dog', 'bird']));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('word0'), findsOneWidget);
-    expect(find.text('word199'), findsNothing);
-    await tester.scrollUntilVisible(find.text('word199'), 1500);
-    expect(find.text('word199'), findsOneWidget);
+    expect(find.byType(TableView), findsOneWidget);
+    await tester.pumpWidget(SizedBox.shrink());
+    await tester.pump();
   });
-
   testWidgets('muestra un mensaje cuando falla la carga', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -103,7 +101,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('No se pudieron cargar las palabras.'),
+      find.textContaining('No se pudo cargar el crucigrama.'),
       findsOneWidget,
     );
     expect(find.byType(CircularProgressIndicator), findsNothing);

@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../providers.dart';
+import '../providers.dart' as providers;
+import 'crossword_widget.dart';
 
 class CrosswordGeneratorApp extends StatelessWidget {
   const CrosswordGeneratorApp({super.key});
@@ -10,30 +11,12 @@ class CrosswordGeneratorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return _EagerInitialization(
       child: Scaffold(
-        appBar: AppBar(title: Text('Crossword Generator')),
-        body: Consumer(
-          builder: (context, ref, child) {
-            final wordListAsync = ref.watch(wordListProvider);
-            return wordListAsync.when(
-              data: (wordList) {
-                final words = wordList.toList(growable: false);
-                return ListView.builder(
-                  itemCount: words.length,
-                  itemExtent: 56,
-                  itemBuilder: (context, index) =>
-                      ListTile(title: Text(words[index])),
-                );
-              },
-              error: (error, stackTrace) => Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No se pudieron cargar las palabras.\n$error'),
-                ),
-              ),
-              loading: () => Center(child: CircularProgressIndicator()),
-            );
-          },
+        appBar: AppBar(
+          title: Text('Crossword Generator'),
+          actions: [_CrosswordGeneratorMenu()],
         ),
+        // Antes: se mostraba la lista de palabras del apartado 4.
+        body: CrosswordWidget(),
       ),
     );
   }
@@ -46,7 +29,33 @@ class _EagerInitialization extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(wordListProvider);
+    ref.watch(providers.wordListProvider);
     return child;
+  }
+}
+
+class _CrosswordGeneratorMenu extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(providers.sizeProvider);
+    return MenuAnchor(
+      menuChildren: [
+        for (final size in providers.CrosswordSize.values)
+          MenuItemButton(
+            onPressed: () =>
+                ref.read(providers.sizeProvider.notifier).setSize(size),
+            leadingIcon: size == selected
+                ? Icon(Icons.check)
+                : SizedBox(width: 24),
+            child: Text(size.label),
+          ),
+      ],
+      builder: (context, controller, child) => IconButton(
+        tooltip: 'Cambiar tamaño',
+        icon: Icon(Icons.settings),
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
+      ),
+    );
   }
 }
