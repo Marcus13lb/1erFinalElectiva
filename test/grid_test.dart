@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +46,7 @@ void main() {
           location: model.Location.at(1, 1),
           word: 'cat',
           direction: model.Direction.across,
-        ),
+        )!,
       );
       await tester.pump();
       await tester.pump();

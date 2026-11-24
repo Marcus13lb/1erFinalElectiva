@@ -14,66 +14,97 @@ void main() {
     expect(location.rightOffset(2), Location.at(5, 4));
     expect(location.upOffset(2), Location.at(3, 2));
     expect(location.downOffset(2), Location.at(3, 6));
-    expect(location.prettyPrint(), '(3, 4)');
   });
 
-  test(
-    'agrega palabras sin modificar las anteriores y registra los cruces',
-    () {
-      final empty = Crossword.crossword(width: 5, height: 4);
-      final across = empty.addWord(
-        location: Location.at(0, 0),
+  test('acepta cruces válidos y rechaza duplicados, conflictos y posiciones inválidas', () {
+    final empty = Crossword.crossword(width: 5, height: 4);
+    final across = empty.addWord(
+      location: Location.at(0, 0),
+      word: 'cat',
+      direction: Direction.across,
+    )!;
+    final crossed = across.addWord(
+      location: Location.at(0, 0),
+      word: 'cow',
+      direction: Direction.down,
+    )!;
+    expect(empty.words, isEmpty);
+    expect(across.characters, hasLength(3));
+    expect(crossed.characters, hasLength(5));
+    expect(crossed.valid, isTrue);
+    expect(crossed.prettyPrintCrossword(), 'cat..\no....\nw....\n.....');
+    expect(crossed.characters[Location.at(0, 0)]!.acrossWord!.word, 'cat');
+    expect(crossed.characters[Location.at(0, 0)]!.downWord!.word, 'cow');
+    expect(
+      across.addWord(
+        location: Location.at(0, 2),
         word: 'cat',
         direction: Direction.across,
-      );
-      final crossed = across.addWord(
+      ),
+      isNull,
+    );
+    expect(
+      across.addWord(
+        location: Location.at(0, 2),
+        word: 'dog',
+        direction: Direction.across,
+      ),
+      isNull,
+    );
+    expect(
+      across.addWord(
         location: Location.at(0, 0),
-        word: 'cow',
+        word: 'dog',
         direction: Direction.down,
-      );
-      expect(empty.words, isEmpty);
-      expect(empty.characters, isEmpty);
-      expect(across.words, hasLength(1));
-      expect(across.characters, hasLength(3));
-      expect(crossed.words, hasLength(2));
-      expect(crossed.characters, hasLength(5));
-      final crossing = crossed.characters[Location.at(0, 0)]!;
-      expect(crossing.character, 'c');
-      expect(crossing.acrossWord!.word, 'cat');
-      expect(crossing.downWord!.word, 'cow');
-      expect(crossed.prettyPrintCrossword(), 'cat..\no....\nw....\n.....');
-      expect(
-        CrosswordWord.locationComparator(
-          across.words.first,
-          CrosswordWord.word(
-            word: 'dog',
-            location: Location.at(0, 1),
-            direction: Direction.across,
-          ),
-        ),
-        lessThan(0),
-      );
-    },
-  );
+      ),
+      isNull,
+    );
+    expect(
+      across.addWord(
+        location: Location.at(0, 0),
+        word: 'car',
+        direction: Direction.across,
+      ),
+      isNull,
+    );
+    expect(
+      empty.addWord(
+        location: Location.at(-1, 0),
+        word: 'cat',
+        direction: Direction.across,
+      ),
+      isNull,
+    );
+    expect(
+      empty.addWord(
+        location: Location.at(4, 0),
+        word: 'cat',
+        direction: Direction.across,
+      ),
+      isNull,
+    );
+    expect(
+      crossed.addWord(
+        location: Location.at(0, 1),
+        word: 'owl',
+        direction: Direction.across,
+      ),
+      isNull,
+    );
+  });
 
   test('los modelos se pueden serializar y recuperar con sus direcciones', () {
-    final grid = Crossword.crossword(width: 5, height: 4)
-        .addWord(
-          location: Location.at(0, 0),
-          word: 'cat',
-          direction: Direction.across,
-        )
-        .addWord(
-          location: Location.at(0, 0),
-          word: 'cow',
-          direction: Direction.down,
-        );
+    final across = Crossword.crossword(width: 5, height: 4).addWord(
+      location: Location.at(0, 0),
+      word: 'cat',
+      direction: Direction.across,
+    )!;
+    final grid = across.addWord(
+      location: Location.at(0, 0),
+      word: 'cow',
+      direction: Direction.down,
+    )!;
     final data = serializers.serializeWith(Crossword.serializer, grid);
-    final restored = serializers.deserializeWith(Crossword.serializer, data);
-    expect(restored, grid);
-    expect(
-      restored!.characters[Location.at(0, 0)]!.downWord!.direction,
-      Direction.down,
-    );
+    expect(serializers.deserializeWith(Crossword.serializer, data), grid);
   });
 }

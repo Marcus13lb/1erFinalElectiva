@@ -107,15 +107,92 @@ abstract class Crossword implements Built<Crossword, CrosswordBuilder> {
   BuiltList<CrosswordWord> get words;
   BuiltMap<Location, CrosswordCharacter> get characters;
 
-  Crossword addWord({
+  bool get valid {
+    if (width <= 0 || height <= 0) return false;
+    final usedWords = <String>{};
+    final occupied = <Location>{};
+    for (final word in words) {
+      if (word.word.isEmpty || !usedWords.add(word.word)) return false;
+      for (final (index, letter) in word.word.characters.indexed) {
+        final location = word.direction == Direction.across
+            ? word.location.rightOffset(index)
+            : word.location.downOffset(index);
+        if (location.x < 0 ||
+            location.x >= width ||
+            location.y < 0 ||
+            location.y >= height) {
+          return false;
+        }
+        final cell = characters[location];
+        if (cell == null || cell.character != letter) return false;
+        if (word.direction == Direction.across && cell.acrossWord != word) {
+          return false;
+        }
+        if (word.direction == Direction.down && cell.downWord != word) {
+          return false;
+        }
+        occupied.add(location);
+      }
+    }
+    if (occupied.length != characters.length) return false;
+    for (final entry in characters.entries) {
+      final location = entry.key;
+      final cell = entry.value;
+      if (cell.acrossWord == null && cell.downWord == null) return false;
+      final right = characters[location.right];
+      if (right != null &&
+          (cell.acrossWord == null || cell.acrossWord != right.acrossWord)) {
+        return false;
+      }
+      final below = characters[location.down];
+      if (below != null &&
+          (cell.downWord == null || cell.downWord != below.downWord)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Crossword? addWord({
     required Location location,
     required String word,
     required Direction direction,
-  }) => rebuild(
-    (b) => b.words.add(
-      CrosswordWord.word(word: word, location: location, direction: direction),
-    ),
-  );
+  }) {
+    if (word.isEmpty || words.any((existing) => existing.word == word)) {
+      return null;
+    }
+    var crossesExistingWord = false;
+    for (final (index, letter) in word.characters.indexed) {
+      final position = direction == Direction.across
+          ? location.rightOffset(index)
+          : location.downOffset(index);
+      if (position.x < 0 ||
+          position.x >= width ||
+          position.y < 0 ||
+          position.y >= height) {
+        return null;
+      }
+      final cell = characters[position];
+      if (cell == null) continue;
+      if (cell.character != letter ||
+          (direction == Direction.across && cell.acrossWord != null) ||
+          (direction == Direction.down && cell.downWord != null)) {
+        return null;
+      }
+      crossesExistingWord = true;
+    }
+    if (words.isNotEmpty && !crossesExistingWord) return null;
+    final candidate = rebuild(
+      (b) => b.words.add(
+        CrosswordWord.word(
+          word: word,
+          location: location,
+          direction: direction,
+        ),
+      ),
+    );
+    return candidate.valid ? candidate : null;
+  }
 
   @BuiltValueHook(finalizeBuilder: true)
   static void _fillCharacters(CrosswordBuilder b) {
