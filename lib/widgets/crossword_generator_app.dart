@@ -57,9 +57,28 @@ class _CrosswordGeneratorMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(providers.sizeProvider);
+    final selectedWorkers = ref.watch(providers.workerCountProvider);
     final showInfo = ref.watch(providers.showDisplayInfoProvider);
     return MenuAnchor(
       menuChildren: [
+        SubmenuButton(
+          leadingIcon: Icon(Icons.memory),
+          menuChildren: [
+            for (final workers in providers.BackgroundWorkers.values)
+              MenuItemButton(
+                onPressed: () => ref
+                    .read(providers.workerCountProvider.notifier)
+                    .setWorkerCount(workers),
+                leadingIcon: Icon(
+                  workers == selectedWorkers
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                child: Text('${workers.count} trabajadores'),
+              ),
+          ],
+          child: Text('Trabajadores: ${selectedWorkers.count}'),
+        ),
         MenuItemButton(
           onPressed: () =>
               ref.read(providers.showDisplayInfoProvider.notifier).toggle(),

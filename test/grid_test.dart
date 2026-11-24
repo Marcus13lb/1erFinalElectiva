@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,7 +39,7 @@ void main() {
     'actualiza las letras sin reconstruir las celdas que no cambiaron',
     (tester) async {
       final controller = await abrirCuadricula(tester);
-      final unchanged = tester.widget(find.byKey(ValueKey('cell-0-0')));
+      final unchanged = tester.widget(find.byKey(ValueKey('cell-0-2')));
       final changed = tester.widget(find.byKey(ValueKey('cell-1-1')));
       controller.add(
         queueFor(
@@ -52,7 +52,7 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      expect(tester.widget(find.byKey(ValueKey('cell-0-0'))), same(unchanged));
+      expect(tester.widget(find.byKey(ValueKey('cell-0-2'))), same(unchanged));
       expect(
         tester.widget(find.byKey(ValueKey('cell-1-1'))),
         isNot(same(changed)),
@@ -93,7 +93,7 @@ void main() {
       expect(table.delegate.rowCount, 500);
       final cells = find.byWidgetPredicate(
         (widget) =>
-            widget is DecoratedBox &&
+            widget is AnimatedContainer &&
             widget.key is ValueKey<String> &&
             (widget.key as ValueKey<String>).value.startsWith('cell-'),
       );

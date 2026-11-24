@@ -46,6 +46,7 @@ class Size extends _$Size {
 @riverpod
 Stream<model.WorkQueue> workQueue(Ref ref) async* {
   final size = ref.watch(sizeProvider);
+  final workers = ref.watch(workerCountProvider);
   var cancelled = false;
   ref.onDispose(() => cancelled = true);
   final words = await ref.watch(wordListProvider.future);
@@ -59,6 +60,7 @@ Stream<model.WorkQueue> workQueue(Ref ref) async* {
         height: size.height,
       ),
       wordList: words,
+      maxWorkerCount: workers.count,
       isCancelled: () => cancelled,
     );
   } finally {
@@ -132,4 +134,25 @@ class DisplayInfo extends _$DisplayInfo {
       ),
     ),
   );
+}
+
+enum BackgroundWorkers {
+  one(1),
+  two(2),
+  four(4),
+  eight(8),
+  sixteen(16),
+  thirtyTwo(32),
+  sixtyFour(64),
+  oneTwentyEight(128);
+
+  const BackgroundWorkers(this.count);
+  final int count;
+}
+
+@Riverpod(keepAlive: true)
+class WorkerCount extends _$WorkerCount {
+  @override
+  BackgroundWorkers build() => BackgroundWorkers.four;
+  void setWorkerCount(BackgroundWorkers workers) => state = workers;
 }

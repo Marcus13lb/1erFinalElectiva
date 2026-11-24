@@ -45,6 +45,7 @@ void main() {
     'la búsqueda guiada termina con un crucigrama válido en segundo plano',
     () async {
       final updates = await exploreCrosswordSolutions(
+        maxWorkerCount: 2,
         crossword: Crossword.crossword(width: 8, height: 6),
         wordList: BuiltSet<String>([
           'cat',

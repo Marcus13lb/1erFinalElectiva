@@ -11,6 +11,7 @@ class CrosswordInfoWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final info = ref.watch(providers.displayInfoProvider);
+    final workers = ref.watch(providers.workerCountProvider);
     final remaining = ref.watch(providers.expectedRemainingTimeProvider);
     return Card(
       elevation: 4,
@@ -46,6 +47,10 @@ class CrosswordInfoWidget extends ConsumerWidget {
               _InfoRow(
                 label: 'Cuadrícula ocupada',
                 value: info.gridFilledPercentage,
+              ),
+              _InfoRow(
+                label: 'Trabajadores máx.',
+                value: workers.count.toString(),
               ),
               _GenerationTime(),
               _InfoRow(label: 'Restante aprox.', value: remaining.formatted),

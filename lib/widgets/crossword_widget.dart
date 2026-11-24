@@ -1,4 +1,4 @@
-﻿import 'package:flutter/gestures.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
@@ -56,11 +56,25 @@ class CrosswordWidget extends ConsumerWidget {
                     ),
                   ),
                 );
+                final explorationCell = ref.watch(
+                  providers.workQueueProvider.select(
+                    (value) => value.when(
+                      data: (queue) =>
+                          queue.locationsToTry.containsKey(location),
+                      error: (error, stackTrace) => false,
+                      loading: () => false,
+                    ),
+                  ),
+                );
                 final colors = Theme.of(context).colorScheme;
-                return DecoratedBox(
+                return AnimatedContainer(
+                  duration: Durations.extralong1,
+                  curve: Curves.easeInOut,
                   key: ValueKey('cell-${location.x}-${location.y}'),
                   decoration: BoxDecoration(
-                    color: character == null
+                    color: explorationCell
+                        ? colors.primary
+                        : character == null
                         ? colors.surface
                         : colors.primaryContainer,
                     border: Border.all(
@@ -69,12 +83,17 @@ class CrosswordWidget extends ConsumerWidget {
                     ),
                   ),
                   child: Center(
-                    child: Text(
-                      character?.character ?? '',
+                    child: AnimatedDefaultTextStyle(
+                      duration: Durations.extralong1,
+                      curve: Curves.easeInOut,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: explorationCell
+                            ? colors.onPrimary
+                            : colors.onSurface,
                       ),
+                      child: Text(character?.character ?? ''),
                     ),
                   ),
                 );
