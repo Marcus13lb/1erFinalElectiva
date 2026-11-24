@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -158,6 +160,7 @@ abstract class Crossword implements Built<Crossword, CrosswordBuilder> {
     required Location location,
     required String word,
     required Direction direction,
+    bool requireOverlap = true,
   }) {
     if (word.isEmpty || words.any((existing) => existing.word == word)) {
       return null;
@@ -182,7 +185,7 @@ abstract class Crossword implements Built<Crossword, CrosswordBuilder> {
       }
       crossesExistingWord = true;
     }
-    if (words.isNotEmpty && !crossesExistingWord) return null;
+    if (requireOverlap && words.isNotEmpty && !crossesExistingWord) return null;
     final candidate = rebuild(
       (b) => b.words.add(
         CrosswordWord.word(
@@ -340,6 +343,150 @@ abstract class DisplayInfo implements Built<DisplayInfo, DisplayInfoBuilder> {
   static Serializer<DisplayInfo> get serializer => _$displayInfoSerializer;
 }
 
+abstract class CrosswordPuzzleGame
+    implements Built<CrosswordPuzzleGame, CrosswordPuzzleGameBuilder> {
+  CrosswordPuzzleGame._();
+  factory CrosswordPuzzleGame([
+    void Function(CrosswordPuzzleGameBuilder) updates,
+  ]) = _$CrosswordPuzzleGame;
+
+  Crossword get crossword;
+  BuiltMap<Location, BuiltMap<Direction, BuiltList<String>>> get alternateWords;
+  BuiltList<CrosswordWord> get selectedWords;
+
+  factory CrosswordPuzzleGame.from({
+    required Crossword crossword,
+    required BuiltSet<String> candidateWords,
+  }) {
+    final lengths = crossword.words
+        .map((word) => word.word.characters.length)
+        .toSet();
+    final used = crossword.words.map((word) => word.word).toSet();
+    final buckets = <int, List<String>>{
+      for (final length in lengths) length: [],
+    };
+    for (final word in candidateWords) {
+      if (!used.contains(word)) buckets[word.characters.length]?.add(word);
+    }
+    final random = Random();
+    final choices = <Location, BuiltMap<Direction, BuiltList<String>>>{};
+    for (final slot in crossword.words) {
+      final pool = buckets[slot.word.characters.length]!;
+      pool.shuffle(random);
+      final alternatives = pool.take(4).toList()..sort();
+      final previous =
+          choices[slot.location] ?? BuiltMap<Direction, BuiltList<String>>();
+      choices[slot.location] = previous.rebuild(
+        (b) => b[slot.direction] = BuiltList<String>(alternatives),
+      );
+    }
+    return CrosswordPuzzleGame(
+      (b) => b
+        ..crossword.replace(crossword)
+        ..alternateWords.addAll(choices),
+    );
+  }
+
+  Crossword? _buildSelection(Iterable<CrosswordWord> selection) {
+    var grid = Crossword.crossword(
+      width: crossword.width,
+      height: crossword.height,
+    );
+    for (final selected in selection) {
+      final next = grid.addWord(
+        location: selected.location,
+        word: selected.word,
+        direction: selected.direction,
+        requireOverlap: false,
+      );
+      if (next == null) return null;
+      grid = next;
+    }
+    return grid;
+  }
+
+  @memoized
+  Crossword get crosswordFromSelectedWords =>
+      _buildSelection(selectedWords) ??
+      (throw StateError('La selección de palabras no es válida.'));
+
+  bool get solved =>
+      crossword.words.isNotEmpty &&
+      selectedWords.length == crossword.words.length &&
+      crosswordFromSelectedWords.valid;
+
+  bool canSelectWord({
+    required Location location,
+    required String word,
+    required Direction direction,
+  }) {
+    final slot = crossword.words
+        .where(
+          (slot) => slot.location == location && slot.direction == direction,
+        )
+        .firstOrNull;
+    if (slot == null) return false;
+    if (word != slot.word &&
+        !(alternateWords[location]?[direction]?.contains(word) ?? false)) {
+      return false;
+    }
+    final selection =
+        selectedWords
+            .where(
+              (selected) =>
+                  selected.location != location ||
+                  selected.direction != direction,
+            )
+            .toList()
+          ..add(
+            CrosswordWord.word(
+              word: word,
+              location: location,
+              direction: direction,
+            ),
+          );
+    return _buildSelection(selection) != null;
+  }
+
+  CrosswordPuzzleGame? selectWord({
+    required Location location,
+    required String word,
+    required Direction direction,
+  }) {
+    if (!canSelectWord(location: location, word: word, direction: direction)) {
+      return null;
+    }
+    return rebuild(
+      (b) => b.selectedWords
+        ..removeWhere(
+          (selected) =>
+              selected.location == location && selected.direction == direction,
+        )
+        ..add(
+          CrosswordWord.word(
+            word: word,
+            location: location,
+            direction: direction,
+          ),
+        ),
+    );
+  }
+
+  CrosswordPuzzleGame clearWord({
+    required Location location,
+    required Direction direction,
+  }) => rebuild(
+    (b) => b.selectedWords
+      ..removeWhere(
+        (selected) =>
+            selected.location == location && selected.direction == direction,
+      ),
+  );
+
+  static Serializer<CrosswordPuzzleGame> get serializer =>
+      _$crosswordPuzzleGameSerializer;
+}
+
 @SerializersFor([
   Location,
   Crossword,
@@ -347,6 +494,7 @@ abstract class DisplayInfo implements Built<DisplayInfo, DisplayInfoBuilder> {
   CrosswordCharacter,
   WorkQueue,
   DisplayInfo,
+  CrosswordPuzzleGame,
 ])
 final Serializers serializers =
     (_$serializers.toBuilder()..add(_DirectionSerializer())).build();

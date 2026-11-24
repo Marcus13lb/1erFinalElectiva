@@ -7,7 +7,8 @@ import '../model.dart' as model;
 import '../providers.dart' as providers;
 
 class CrosswordWidget extends ConsumerWidget {
-  const CrosswordWidget({super.key});
+  const CrosswordWidget({super.key, this.hideLetters = false});
+  final bool hideLetters;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,7 +94,13 @@ class CrosswordWidget extends ConsumerWidget {
                             ? colors.onPrimary
                             : colors.onSurface,
                       ),
-                      child: Text(character?.character ?? ''),
+                      child: Text(
+                        character == null
+                            ? ''
+                            : hideLetters
+                            ? '•'
+                            : character.character,
+                      ),
                     ),
                   ),
                 );
