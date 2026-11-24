@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../providers.dart' as providers;
 import 'crossword_widget.dart';
+import 'crossword_info_widget.dart';
 
 class CrosswordGeneratorApp extends StatelessWidget {
   const CrosswordGeneratorApp({super.key});
@@ -16,7 +17,25 @@ class CrosswordGeneratorApp extends StatelessWidget {
           actions: [_CrosswordGeneratorMenu()],
         ),
         // Antes: se mostraba la lista de palabras del apartado 4.
-        body: CrosswordWidget(),
+        body: Stack(
+          children: [
+            CrosswordWidget(),
+            Consumer(
+              builder: (context, ref, child) {
+                if (!ref.watch(providers.showDisplayInfoProvider)) {
+                  return SizedBox.shrink();
+                }
+                return Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CrosswordInfoWidget(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -38,8 +57,18 @@ class _CrosswordGeneratorMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(providers.sizeProvider);
+    final showInfo = ref.watch(providers.showDisplayInfoProvider);
     return MenuAnchor(
       menuChildren: [
+        MenuItemButton(
+          onPressed: () =>
+              ref.read(providers.showDisplayInfoProvider.notifier).toggle(),
+          leadingIcon: Icon(
+            showInfo ? Icons.check_box : Icons.check_box_outline_blank,
+          ),
+          child: Text('Display Info'),
+        ),
+        Divider(),
         for (final size in providers.CrosswordSize.values)
           MenuItemButton(
             onPressed: () =>

@@ -2,6 +2,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:characters/characters.dart';
+import 'package:intl/intl.dart';
 
 part 'model.g.dart';
 
@@ -299,12 +300,53 @@ abstract class WorkQueue implements Built<WorkQueue, WorkQueueBuilder> {
   static Serializer<WorkQueue> get serializer => _$workQueueSerializer;
 }
 
+abstract class DisplayInfo implements Built<DisplayInfo, DisplayInfoBuilder> {
+  DisplayInfo._();
+  factory DisplayInfo([void Function(DisplayInfoBuilder) updates]) =
+      _$DisplayInfo;
+
+  String get wordsInGridCount;
+  String get candidateWordsCount;
+  String get locationsToExploreCount;
+  String get knownBadLocationsCount;
+  String get gridFilledPercentage;
+
+  factory DisplayInfo.from({required WorkQueue workQueue}) {
+    final format = NumberFormat.decimalPattern();
+    final grid = workQueue.crossword;
+    final total = grid.width * grid.height;
+    final percentage = total == 0 ? 0.0 : grid.characters.length / total * 100;
+    return DisplayInfo(
+      (b) => b
+        ..wordsInGridCount = format.format(grid.words.length)
+        ..candidateWordsCount = format.format(workQueue.candidateWords.length)
+        ..locationsToExploreCount = format.format(
+          workQueue.locationsToTry.length,
+        )
+        ..knownBadLocationsCount = format.format(workQueue.badLocations.length)
+        ..gridFilledPercentage = '${percentage.toStringAsFixed(1)}%',
+    );
+  }
+
+  static DisplayInfo get empty => DisplayInfo(
+    (b) => b
+      ..wordsInGridCount = '0'
+      ..candidateWordsCount = '0'
+      ..locationsToExploreCount = '0'
+      ..knownBadLocationsCount = '0'
+      ..gridFilledPercentage = '0.0%',
+  );
+
+  static Serializer<DisplayInfo> get serializer => _$displayInfoSerializer;
+}
+
 @SerializersFor([
   Location,
   Crossword,
   CrosswordWord,
   CrosswordCharacter,
   WorkQueue,
+  DisplayInfo,
 ])
 final Serializers serializers =
     (_$serializers.toBuilder()..add(_DirectionSerializer())).build();

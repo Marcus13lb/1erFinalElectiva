@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,10 +9,10 @@ import 'package:generate_crossword/widgets/crossword_generator_app.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
-Future<StreamController<model.Crossword>> abrirCuadricula(
+Future<StreamController<model.WorkQueue>> abrirCuadricula(
   WidgetTester tester,
 ) async {
-  final controller = StreamController<model.Crossword>();
+  final controller = StreamController<model.WorkQueue>();
   addTearDown(() {
     controller.close();
   });
@@ -23,12 +23,12 @@ Future<StreamController<model.Crossword>> abrirCuadricula(
         providers.wordListProvider.overrideWith(
           (ref) async => BuiltSet<String>(['cat']),
         ),
-        providers.crosswordProvider.overrideWith((ref) => controller.stream),
+        providers.workQueueProvider.overrideWith((ref) => controller.stream),
       ],
       child: MaterialApp(home: CrosswordGeneratorApp()),
     ),
   );
-  controller.add(model.Crossword.crossword(width: 40, height: 22));
+  controller.add(queueFor(model.Crossword.crossword(width: 40, height: 22)));
   await tester.pump();
   await tester.pump();
   return controller;
@@ -42,11 +42,13 @@ void main() {
       final unchanged = tester.widget(find.byKey(ValueKey('cell-0-0')));
       final changed = tester.widget(find.byKey(ValueKey('cell-1-1')));
       controller.add(
-        model.Crossword.crossword(width: 40, height: 22).addWord(
-          location: model.Location.at(1, 1),
-          word: 'cat',
-          direction: model.Direction.across,
-        )!,
+        queueFor(
+          model.Crossword.crossword(width: 40, height: 22).addWord(
+            location: model.Location.at(1, 1),
+            word: 'cat',
+            direction: model.Direction.across,
+          )!,
+        ),
       );
       await tester.pump();
       await tester.pump();
@@ -133,3 +135,9 @@ void main() {
     );
   });
 }
+
+model.WorkQueue queueFor(model.Crossword grid) => model.WorkQueue.from(
+  crossword: grid,
+  candidateWords: const [],
+  startLocation: model.Location.at(0, 0),
+);

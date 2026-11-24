@@ -1,4 +1,4 @@
-import 'package:built_collection/built_collection.dart';
+﻿import 'package:built_collection/built_collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:generate_crossword/isolates.dart';
 import 'package:generate_crossword/model.dart';
@@ -56,10 +56,10 @@ void main() {
           'tar',
         ]),
       ).toList().timeout(Duration(seconds: 10));
-      expect(updates.first.words, isEmpty);
-      expect(updates.last.words, isNotEmpty);
-      expect(updates.every((grid) => grid.valid), isTrue);
-      expect(updates.last.words.length, lessThanOrEqualTo(7));
+      expect(updates.first.crossword.words, isEmpty);
+      expect(updates.last.crossword.words, isNotEmpty);
+      expect(updates.every((queue) => queue.crossword.valid), isTrue);
+      expect(updates.last.crossword.words.length, lessThanOrEqualTo(7));
     },
   );
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
@@ -13,7 +13,7 @@ class CrosswordWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final size = ref.watch(providers.sizeProvider);
     final status = ref.watch(
-      providers.crosswordProvider.select(
+      providers.workQueueProvider.select(
         (value) => (loading: value.isLoading, error: value.error),
       ),
     );
@@ -48,9 +48,9 @@ class CrosswordWidget extends ConsumerWidget {
             child: Consumer(
               builder: (context, ref, child) {
                 final character = ref.watch(
-                  providers.crosswordProvider.select(
+                  providers.workQueueProvider.select(
                     (value) => value.when(
-                      data: (grid) => grid.characters[location],
+                      data: (queue) => queue.crossword.characters[location],
                       error: (error, stackTrace) => null,
                       loading: () => null,
                     ),

@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:characters/characters.dart';
@@ -53,25 +53,26 @@ WorkQueue _advanceWorkQueue(WorkQueue queue) {
   return queue.remove(location);
 }
 
-Stream<Crossword> exploreCrosswordSolutions({
+Stream<WorkQueue> exploreCrosswordSolutions({
   required Crossword crossword,
   required BuiltSet<String> wordList,
   bool Function()? isCancelled,
 }) async* {
   final stopwatch = Stopwatch()..start();
-  yield crossword;
+
   var queue = WorkQueue.from(
     crossword: crossword,
     candidateWords: wordList,
     startLocation: Location.at(0, 0),
   );
+  yield queue;
   try {
     while (!queue.isCompleted) {
       if (isCancelled?.call() ?? false) return;
       // Solo se envía la cola inmutable al aislamiento, sin referencias a Riverpod.
       queue = await compute(_advanceWorkQueue, queue);
       if (isCancelled?.call() ?? false) return;
-      yield queue.crossword;
+      yield queue;
     }
   } finally {
     stopwatch.stop();
